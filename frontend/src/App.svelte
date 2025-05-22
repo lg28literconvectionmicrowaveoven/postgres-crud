@@ -1,17 +1,12 @@
 <script>
   import { onMount } from 'svelte';
-
-  // App states
-  let isLoggedIn = false;
   let isLoading = false;
   let error = '';
   let successMessage = '';
   let token = '';
   let username = '';
   let email = '';
-  let currentView = 'login'; // 'login', 'signup', 'dashboard', 'change-password'
-  
-  // Form data
+  let currentView = 'login';
   let loginEmail = '';
   let loginPassword = '';
   let signupUsername = '';
@@ -21,11 +16,9 @@
   let newPassword = '';
   let newPasswordConfirm = '';
 
-  // API base URL - adjust as needed for your environment
   const API_URL = 'http://127.0.0.1:8000';
 
   onMount(() => {
-    // Check for saved token in localStorage
     const savedToken = localStorage.getItem('authToken');
     const savedUsername = localStorage.getItem('username');
     
@@ -35,32 +28,25 @@
       validateToken(savedToken);
     }
   });
-
   async function validateToken(authToken) {
     isLoading = true;
     error = '';
-    
     try {
       const response = await fetch(`${API_URL}/?token=${authToken}`);
-      
       if (response.ok) {
         const data = await response.json();
-        isLoggedIn = true;
         email = data.email;
         username = data.user_name;
         currentView = 'dashboard';
         localStorage.setItem('authToken', authToken);
         localStorage.setItem('username', username);
       } else {
-        // Token is invalid, clear localStorage
         localStorage.removeItem('authToken');
         localStorage.removeItem('username');
-        isLoggedIn = false;
         currentView = 'login';
       }
     } catch (err) {
       error = 'Network error. Please try again.';
-      isLoggedIn = false;
     } finally {
       isLoading = false;
     }
@@ -71,28 +57,20 @@
       error = 'Please fill in all fields';
       return;
     }
-    
     isLoading = true;
     error = '';
-    
     try {
       const response = await fetch(`${API_URL}/login?email=${encodeURIComponent(loginEmail)}&password=${encodeURIComponent(loginPassword)}`, {
         method: 'POST'
       });
-      
       if (response.ok) {
         const data = await response.json();
         token = data.token;
         username = data.user_name;
         email = loginEmail;
-        isLoggedIn = true;
         currentView = 'dashboard';
-        
-        // Save to localStorage
         localStorage.setItem('authToken', token);
         localStorage.setItem('username', username);
-        
-        // Clear form
         loginEmail = '';
         loginPassword = '';
       } else {
@@ -111,15 +89,12 @@
       error = 'Please fill in all fields';
       return;
     }
-    
     if (signupPassword !== signupConfirmPassword) {
       error = 'Passwords do not match';
       return;
     }
-    
     isLoading = true;
     error = '';
-    
     try {
       const response = await fetch(
         `${API_URL}/signup?username=${encodeURIComponent(signupUsername)}&email=${encodeURIComponent(signupEmail)}&password=${encodeURIComponent(signupPassword)}`, 
@@ -127,20 +102,14 @@
           method: 'POST'
         }
       );
-      
       if (response.ok) {
         const data = await response.json();
         token = data.token;
-        isLoggedIn = true;
         email = signupEmail;
         username = signupUsername;
         currentView = 'dashboard';
-        
-        // Save to localStorage
         localStorage.setItem('authToken', token);
         localStorage.setItem('username', username);
-        
-        // Clear form
         signupUsername = '';
         signupEmail = '';
         signupPassword = '';
@@ -161,15 +130,12 @@
       error = 'Please fill in all fields';
       return;
     }
-    
     if (newPassword !== newPasswordConfirm) {
       error = 'Passwords do not match';
       return;
     }
-    
     isLoading = true;
     error = '';
-    
     try {
       const response = await fetch(
         `${API_URL}/change-password?token=${encodeURIComponent(token)}&new_password=${encodeURIComponent(newPassword)}`,
@@ -177,15 +143,10 @@
           method: 'POST'
         }
       );
-      
       if (response.ok) {
         const data = await response.json();
         token = data.token;
-        
-        // Update localStorage
         localStorage.setItem('authToken', token);
-        
-        // Clear form and show success message
         newPassword = '';
         newPasswordConfirm = '';
         successMessage = 'Password changed successfully';
@@ -205,20 +166,16 @@
   async function handleLogout() {
     isLoading = true;
     error = '';
-    
     try {
       const response = await fetch(`${API_URL}/logout?token=${encodeURIComponent(token)}`, {
         method: 'POST'
       });
-      
       if (response.ok) {
-        // Clear states and localStorage
         localStorage.removeItem('authToken');
         localStorage.removeItem('username');
         token = '';
         username = '';
         email = '';
-        isLoggedIn = false;
         currentView = 'login';
       } else {
         const errorData = await response.json();
@@ -235,23 +192,18 @@
     if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
       return;
     }
-    
     isLoading = true;
     error = '';
-    
     try {
       const response = await fetch(`${API_URL}/delete-account?token=${encodeURIComponent(token)}`, {
         method: 'DELETE'
       });
-      
       if (response.ok) {
-        // Clear states and localStorage
         localStorage.removeItem('authToken');
         localStorage.removeItem('username');
         token = '';
         username = '';
         email = '';
-        isLoggedIn = false;
         currentView = 'login';
         successMessage = 'Account deleted successfully';
         setTimeout(() => successMessage = '', 3000);
@@ -291,7 +243,6 @@
     {#if isLoading}
       <div class="loading">Loading...</div>
     {:else}
-      <!-- Login Form -->
       {#if currentView === 'login'}
         <div class="auth-form">
           <h2>Login</h2>
@@ -327,7 +278,6 @@
           </p>
         </div>
       
-      <!-- Signup Form -->
       {:else if currentView === 'signup'}
         <div class="auth-form">
           <h2>Create Account</h2>
@@ -385,7 +335,6 @@
           </p>
         </div>
       
-      <!-- Dashboard -->
       {:else if currentView === 'dashboard'}
         <div class="dashboard">
           <h2>Welcome, {username}!</h2>
@@ -407,7 +356,6 @@
           </div>
         </div>
       
-      <!-- Change Password Form -->
       {:else if currentView === 'change-password'}
         <div class="auth-form">
           <h2>Change Password</h2>
